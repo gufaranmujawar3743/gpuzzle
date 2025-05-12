@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Puzzle Game</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+        .container {
+            max-width: 600px; /* Increased max-width for larger screens */
+        }
+        .game-title {
+            font-size: 2.5rem; /* Increased font size */
+        }
+        .puzzle-container {
+            width: 100%; /* Ensure the puzzle container takes full width */
+            max-width: 400px; /* Max width for the puzzle grid */
+            height: auto; /* Maintain aspect ratio */
+            aspect-ratio: 1 / 1;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr); /* 4x4 grid */
+            gap: 0.5rem; /* Increased gap */
+            margin-top: 1rem;
+            position: relative; /* Needed for absolute positioning of winning message */
+        }
+        .puzzle-piece {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem; /* Increased font size */
+            cursor: pointer;
+            border-radius: 0.5rem; /* Rounded corners */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Subtle shadow */
+            transition: transform 0.2s ease; /* Smooth transition */
+            user-select: none; /* Prevent text selection */
+        }
+        .puzzle-piece:hover {
+            transform: scale(1.05); /* Slight scale on hover */
+            box-shadow: 0 4px 7px rgba(0, 0, 0, 0.3); /* Increased shadow on hover */
+        }
+        .empty-piece {
+            background-color: transparent;
+            border: 2px dashed #cbd5e0; /* Dashed border for empty space */
+            box-shadow: none; /* Remove shadow for empty piece */
+        }
+        .winning-message {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent white */
+            font-size: 2rem; /* Increased font size */
+            font-weight: bold;
+            color: #10b981; /* Green color for winning text */
+            border-radius: 0.5rem; /* Rounded corners */
+            z-index: 10; /* Ensure it's on top */
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            align-items: center; /* Vertically center items */
+            gap: 1rem; /* Increased gap between buttons */
+            margin-top: 1.5rem; /* Increased margin */
+        }
+        .reset-button, .mute-button {
+            padding: 0.75rem 1.5rem; /* Increased padding */
+            font-size: 1rem; /* Increased font size */
+            border-radius: 0.5rem; /* Rounded corners */
+            cursor: pointer;
+            transition: background-color 0.3s ease; /* Smooth transition */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Subtle shadow */
+        }
+        .reset-button:hover, .mute-button:hover {
+            /* Hover effect is handled by Tailwind's hover classes */
+            box-shadow: 0 4px 7px rgba(0, 0, 0, 0.3); /* Increased shadow on hover */
+        }
+        .mute-button.muted {
+            background-color: #f87171; /* Reddish color for muted state */
+            color: white;
+        }
+        .moves-counter {
+            font-size: 1.25rem; /* Increased font size */
+            color: #4b5563;
+            margin-top: 1.5rem; /* Increased margin */
+            text-align: center;
+        }
+        .how-to-play {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            background-color: #f7fafc;
+            color: #4a5568;
+            line-height: 1.75;
+        }
+        .how-to-play h2 {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            color: #2d3748;
+        }
+        .how-to-play ol {
+            list-style-position: inside;
+            padding-left: 0;
+        }
+        .how-to-play li {
+            margin-bottom: 0.75rem;
+        }
+        .how-to-play p{
+          margin-bottom: 0.75rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center justify-start pt-10">
+    <div class="container bg-white rounded-lg shadow-md p-6 flex flex-col items-center">
+        <h1 class="game-title text-blue-600 font-semibold mb-4">Number Puzzle</h1>
+        <div class="puzzle-container">
+            </div>
+        <div class="moves-counter">
+            Moves: <span id="moves-count">0</span>
+        </div>
+        <div class="controls mt-4">
+            <button class="reset-button bg-blue-500 hover:bg-blue-700 text-white font-semibold" id="reset-button">Reset</button>
+            <button class="mute-button bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold" id="mute-button">Mute</button>
+        </div>
+        <div class="how-to-play">
+            <h2>How to Play</h2>
+            <p>
+                The goal of the number puzzle is to arrange the tiles in numerical order, from 1 to 15, leaving the last square empty.
+            </p>
+            <ol>
+                <li><strong>Start:</strong> The puzzle begins with the tiles randomly arranged.</li>
+                <li><strong>Move Tiles:</strong> You can slide a tile into the empty square by clicking on a tile that is adjacent to it (horizontally or vertically).</li>
+                <li><strong>Arrange:</strong> Continue sliding tiles until they are in numerical order.</li>
+                <li><strong>Win:</strong> The game is won when the tiles are arranged in order, with the empty square in the bottom right corner.</li>
+            </ol>
+            <p>
+                Use the "Reset" button to shuffle the tiles and start a new game.  Use the "Mute" button to toggle sound effects.
+            </p>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <script>
+        const puzzleContainer = document.querySelector('.puzzle-container');
+        const resetButton = document.getElementById('reset-button');
+        const movesCountDisplay = document.getElementById('moves-count');
+        const muteButton = document.getElementById('mute-button');
+
+        let puzzlePieces = [];
+        let emptyIndex = 15; // Index of the empty square
+        let movesCount = 0;
+        let isMuted = false;
+        let gameWon = false;
+
+        // Initialize Tone.js (sound effects)
+        const synth = new Tone.Synth().toDestination();
+
+        // Function to play sound (only if not muted)
+        function playMoveSound() {
+            if (!isMuted) {
+                synth.triggerAttackRelease("C4", "8n");
+            }
+        }
+
+        // Function to create the puzzle board
+        function createPuzzleBoard() {
+            puzzleContainer.innerHTML = ''; // Clear any existing pieces
+            puzzlePieces = Array.from({ length: 16 }, (_, i) => (i + 1) % 16); // Create array 0-15, where 0 is the empty space
+            emptyIndex = 15; // Initialize empty space to the last tile
+            movesCount = 0;
+            gameWon = false;
+            movesCountDisplay.textContent = movesCount; // Update display
+
+            shufflePuzzle(); // Shuffle the pieces
+            renderPuzzleBoard(); // Render the board
+        }
+
+        // Function to shuffle the puzzle using the Fisher-Yates algorithm
+        function shufflePuzzle() {
+            for (let i = puzzlePieces.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [puzzlePieces[i], puzzlePieces[j]] = [puzzlePieces[j], puzzlePieces[i]];
+            }
+            // Ensure the puzzle is solvable (important for 15-puzzle)
+            while (!isSolvable(puzzlePieces)) {
+                shufflePuzzle();
+            }
+        }
+
+        // Function to check if the puzzle is solvable (15-puzzle specific)
+        function isSolvable(puzzle) {
+            let inversions = 0;
+            for (let i = 0; i < puzzle.length; i++) {
+                for (let j = i + 1; j < puzzle.length; j++) {
+                    if (puzzle[i] && puzzle[j] && puzzle[i] > puzzle[j]) {
+                        inversions++;
+                    }
+                }
+            }
+            const emptyRow = 4 - Math.floor(emptyIndex / 4); // Row of the empty tile (counting from bottom)
+            return (inversions % 2 === 0) === (emptyRow % 2 === 1); // Solvable condition
+        }
+
+        // Function to render the puzzle board
+        function renderPuzzleBoard() {
+            puzzleContainer.innerHTML = ''; // Clear the container
+            puzzlePieces.forEach((piece, index) => {
+                const pieceElement = document.createElement('div');
+                pieceElement.classList.add('puzzle-piece');
+                pieceElement.textContent = piece === 0 ? '' : piece; // Display empty space as empty
+                pieceElement.style.backgroundColor = piece === 0 ? 'transparent' : '#f59e0b'; // Orange color
+                pieceElement.style.color = piece === 0 ? 'transparent' : 'white';
+                if (piece === 0) {
+                    pieceElement.classList.add('empty-piece');
+                } else {
+                    pieceElement.addEventListener('click', () => handlePieceClick(index));
+                }
+                puzzleContainer.appendChild(pieceElement);
+            });
+
+            if (checkWin()) {
+                displayWinMessage();
+            }
+        }
+
+        // Function to handle a piece click
+        function handlePieceClick(clickedIndex) {
+            if (gameWon) return; // Prevent moves after game is won
+
+            const emptyRow = Math.floor(emptyIndex / 4);
+            const emptyCol = emptyIndex % 4;
+            const clickedRow = Math.floor(clickedIndex / 4);
+            const clickedCol = clickedIndex % 4;
+
+            // Check if the clicked piece is adjacent to the empty space
+            if ((Math.abs(emptyRow - clickedRow) === 0 && Math.abs(emptyCol - clickedCol) === 1) ||
+                (Math.abs(emptyRow - clickedRow) === 1 && Math.abs(emptyCol - clickedCol) === 0)) {
+                // Swap the pieces
+                [puzzlePieces[emptyIndex], puzzlePieces[clickedIndex]] = [puzzlePieces[clickedIndex], puzzlePieces[emptyIndex]];
+                emptyIndex = clickedIndex; // Update the empty index
+                movesCount++;
+                movesCountDisplay.textContent = movesCount;
+                playMoveSound();
+                renderPuzzleBoard();
+            }
+        }
+
+        // Function to check if the game is won
+        function checkWin() {
+            for (let i = 0; i < puzzlePieces.length - 1; i++) {
+                if (puzzlePieces[i] !== (i + 1)) {
+                    return false;
+                }
+            }
+            return puzzlePieces[15] === 0; // Last piece is empty
+        }
+
+        // Function to display the winning message
+        function displayWinMessage() {
+            const winMessage = document.createElement('div');
+            winMessage.classList.add('winning-message');
+            winMessage.textContent = 'You Win!';
+            puzzleContainer.appendChild(winMessage);
+            gameWon = true;
+        }
+
+        // Event listener for the reset button
+        resetButton.addEventListener('click', createPuzzleBoard);
+
+        // Event listener for the mute button
+        muteButton.addEventListener('click', () => {
+            isMuted = !isMuted;
+            muteButton.classList.toggle('muted', isMuted);
+            muteButton.textContent = isMuted ? 'Unmute' : 'Mute';
+        });
+
+        // Initialize the game when the page loads
+        createPuzzleBoard();
+    </script>
+</body>
+</html>
